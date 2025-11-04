@@ -1,6 +1,9 @@
 This repository contains the implementation of the machine learning pipeline used in my diploma thesis entitled:
+
 **“Binary Classification of Multi-Class Malware”** 
+
 Diploma Thesis – Electrical and Computer Engineering  
+
 University of Patras, Greece (2025)
 
 ---
