@@ -8,18 +8,24 @@ University of Patras, Greece (2025)
 
 ---
 
+
 ## Project Overview
 
-The goal of this research is to detect malware and classify samples into multiple behavioral categories using static behavior features extracted from Portable Executable (PE) files.
+This repository contains my MSc thesis work on **multi-label malware behavior binary classification** using the MalDICT-Behavior dataset and EMBER feature vectors.
 
-Since malware can exhibit more than one malicious behavior simultaneously, the task is formulated as a **multi-label binary classification problem**. Each classifier decides independently whether a specific malware behavior is present or not in a sample.
 
-Main methodological components:
-- One-vs-Rest (OvR) training with LightGBM binary models per label
-- Handling high class imbalance through per-label sampling strategies
-- Platt scaling for probability calibration
-- Per-label decision threshold optimization based on validation performance
-- Macro-metric oriented evaluation to ensure fair performance across all behaviors
+Starting from the official MalDICT resources, I:
+Build a large-scale, sparse multi-label dataset for malware behaviors.
+Apply label balancing and capping strategies to handle extreme class imbalance.
+Train and compare several models:
+- LightGBM (per-label baseline with calibration & tuned thresholds)
+- Random Forest
+- XGBoost
+- CatBoost
+- TabNet (Tabular Neural Network)
+- 
+Evaluate all methods on a temporal test split, reporting micro / macro / weighted Precision, Recall, F1-score, AUC.
+All training / evaluation scripts and result files are included in this repository.
 
 ---
 
@@ -30,16 +36,46 @@ Main methodological components:
 | `01_vectorize_behavior_new.ipynb` | Feature vectorization and creation of sparse `.npz` behavior feature chunks |
 | `02_train_ovr_new.ipynb` | Per-label LightGBM model training and validation threshold estimation |
 | `03_train_eval_capped.ipynb` | Calibration, test evaluation, and computation of final performance metrics |
+| `04_train_catboost_capped.ipynb`| Per-label  |
+| `04_train_rf_capped.ipynb`|  |
+| `04_train_tabnet_capped.ipynb`|  |
+| `04_train_xgboost_capped.ipynb`|  |
+
+
 
 ---
+## Dataset & Feature Pipeline
 
-## Dataset
+# MalDICT-Behavior
+Based on MalDICT-Behavior, which provides malware samples annotated with one or more
+behavior / category labels.
+After cleaning and consistency checks, the working setup uses **64 active labels**.
 
-The project uses the **MalDICT behavior subset** derived from the EMBER benchmark dataset.
+# EMBER Feature Extraction
 
-Dataset Source: https://github.com/elastic/ember
+**1. Streaming JSONL**
+Read EMBER metadata (*_features.jsonl) line-by-line.
+Avoid loading the full dataset into memory at once.
 
-The dataset itself is not included in this repository due to size and licensing restrictions.
+**2. MD5 Filtering**
+Build a keep_set of hashes from MalDICT-Behavior tag files.
+Keep only samples whose md5 appears in this set.
+Ensures every feature vector has valid behavior labels.
+
+**3. Vectorization**
+Use PEFeatureExtractor (EMBER v2) to convert each sample to a fixed-length feature vector.
+Store the result as sparse .npz matrices in parts (e.g. 5k samples per file).
+
+**4. Multi-Label Targets**
+Normalize behavior tags.
+Build a global label -> index mapping over 64 labels.
+Encode each sample as a multi-hot vector.
+Save Y in parts aligned 1:1 with the X parts and validate row alignment.
+
+Result:
+X_train, X_test: high-dimensional sparse EMBER features.
+Y_train, Y_test: aligned multi-label targets for 64 behaviors.
+
 
 ---
 
